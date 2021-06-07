@@ -1,7 +1,8 @@
 # The Open Bank Project
 This is the open bank repository
 
-**Why**
+**Why?**
+
 The open bank project has been created to replicate banking facilities on the blockchain. The idea is to provide smart contracts with banking support to facilitate innovation
 in fund management surrounding dApps. The initial idea is to provide pluggable functionality that a wallet hard or soft does not typically provide. The difference between this 
 type of bank and a regular bank is that this bank is non-custodial. I.e. Once you've bought your instance of the Open Bank contract it's yours and yours alone. If you want support
