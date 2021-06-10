@@ -52,15 +52,15 @@ contract Bank is IBank {
      */ 
     function deposit(uint256 _amount, string memory _depositReference) override payable external returns (uint256 _bankBalance, uint256 _depositTime, uint256 _txnRef){
         // @todo access security
-        require(!initatorRefKnownStatusByinitiatorReference[_depositReference]," d00 duplicate deposit reference");
-        require(_amount > 0, "d01 malicious deposit amount ");
+        require(!initatorRefKnownStatusByinitiatorReference[_depositReference]," d00 - duplicate deposit reference");
+        require(_amount > 0, "d01 - malicious deposit amount ");
         if(!native) { // not ETH
             erc20.transferFrom(msg.sender, address(this), _amount);
         }
         else {
             // nothing to do 
         }
-        bankBalance+=_amount;
+        bankBalance+=_amount; // add to balance
         uint256 txnRef = generateTxnRef(); 
         Transaction memory transaction = Transaction({  _type : "deposit", 
                                                             _initiatorRef : _depositReference, 
@@ -80,8 +80,8 @@ contract Bank is IBank {
      */ 
     function withdraw(uint256 _amount, string memory _withdrawalReference,  address payable _payoutAddress) override external returns (uint256 _bankBalance, uint256 _withdrawalTime, uint256 _txnRef){
         // @todo access security
-        require(!initatorRefKnownStatusByinitiatorReference[_withdrawalReference], "w00 duplicate withdrawal reference"); 
-        require(_amount > 0, "w01 malicious withdrawal amount ");
+        require(!initatorRefKnownStatusByinitiatorReference[_withdrawalReference], "w00 - duplicate withdrawal reference"); 
+        require(_amount > 0, "w01 - malicious withdrawal amount ");
         require(bankBalance > 0 && bankBalance >= _amount, "w02 insufficient funds ");
         bankBalance-=_amount; // deduct from the balance first 
         if(!native) { // not ETH
@@ -114,7 +114,7 @@ contract Bank is IBank {
 
     function findTransaction(uint256 txnRef) override external view returns (string memory _type, string memory _initiatorRef, uint256 _date, uint256 _amount, address _initiator, address _reciepient, uint256 _txnRef) {
         // @todo access security
-        require(transactionRefKnownStatusByTransactionReference[txnRef], " unkown transaction reference");
+        require(transactionRefKnownStatusByTransactionReference[txnRef], "ft00 - unkown transaction reference");
         Transaction memory transaction = transactionByTransactionReference[txnRef];
         return (transaction._type,transaction._initiatorRef, transaction._date, transaction._amount, transaction._initiator, transaction._reciepient, transaction._txnRef );
     }
@@ -127,32 +127,56 @@ contract Bank is IBank {
         return (bankBalance, block.timestamp); 
     }
 
-    function getStatement(uint256 _startDate, uint256 _endDate) override external view returns (string [] memory _type, string [] memory _initiatorRef, uint256 [] memory _date, uint256 [] memory  _amount, address [] memory  _initiator, address [] memory  _reciepient, uint256 [] memory  _txnRef) {
+    function getStatement(uint256 _startDate, uint256 _endDate) override external view returns (string [] memory _type, 
+                                                                                                string [] memory _initiatorRef, 
+                                                                                                uint256 [] memory _date,
+                                                                                                uint256 [] memory  _amount, 
+                                                                                                address [] memory  _initiator, 
+                                                                                                address [] memory  _receipient, 
+                                                                                                uint256 [] memory  _txnRef) {
         // @todo access security
         
         uint256 length = txnLog.length; 
-        string [] memory xtype = new string[](length); 
-        string [] memory initiatorRef = new string[](length);
-        uint256 [] memory date = new uint256[](length); 
-        uint256 [] memory amount = new uint256[](length);
-        address [] memory initiator = new address[](length); 
-        address [] memory reciepient = new address[](length); 
-        uint256 [] memory txnRef = new uint256[](length);
+        Transaction [] memory results = new Transaction[](length);
         
-
-        for(uint256 x ; x < txnLog.length; x++ ){
+        // find the right transactions
+        uint256 inRangeIndex = 0; 
+        uint256 x = 0;
+        for(x ; x < txnLog.length; x++ ){
            
             Transaction memory transaction = txnLog[x];
-            xtype[x] = transaction._type;  
-            initiatorRef[x] = transaction._initiatorRef; 
-            date[x] = transaction._date; 
-            amount[x] = transaction._amount; 
-            initiator[x] = transaction._initiator; 
-            reciepient[x] = transaction._reciepient;
-            txnRef[x] = transaction._txnRef; 
+            if(transaction._date >= _startDate && transaction._date <=_endDate){
+                results[inRangeIndex] = transaction;
+                inRangeIndex++;
+            }
+         
         
         }
-        return (xtype, initiatorRef, date, amount, initiator, reciepient, txnRef); 
+            
+        _type = new string[](length); 
+        _initiatorRef = new string[](length);
+        _date = new uint256[](length); 
+        _amount = new uint256[](length);
+        _initiator = new address[](length); 
+        _receipient = new address[](length); 
+        _txnRef = new uint256[](length);
+        
+        // reset x
+        x=0;
+        // reset length
+        length = inRangeIndex+1;
+        for(x ; x < length; x++) {
+            Transaction memory result = results[x];
+            _type[x] =  result._type;  
+            _initiatorRef[x] =  result._initiatorRef; 
+            _date[x] =  result._date; 
+            _amount[x] =  result._amount; 
+            _initiator[x] =  result._initiator; 
+            _receipient[x] =  result._reciepient;
+            _txnRef[x] =  result._txnRef; 
+        }
+        
+        return (_type, _initiatorRef, _date, _amount, _initiator, _receipient, _txnRef); 
     }
 
     function generateTxnRef() internal returns (uint256 _ref){
