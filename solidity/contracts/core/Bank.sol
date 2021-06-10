@@ -101,7 +101,6 @@ contract Bank is IBank {
                                                 });
         txnLog.push(transaction)                                                        ;
         transactionByTransactionReference[txnRef] = transaction; 
-        
         return (bankBalance, block.timestamp, txnRef);
     }
     
@@ -142,15 +141,12 @@ contract Bank is IBank {
         // find the right transactions
         uint256 inRangeIndex = 0; 
         uint256 x = 0;
-        for(x ; x < txnLog.length; x++ ){
-           
+        for(x ; x < length; x++ ){
             Transaction memory transaction = txnLog[x];
             if(transaction._date >= _startDate && transaction._date <=_endDate){
                 results[inRangeIndex] = transaction;
                 inRangeIndex++;
             }
-         
-        
         }
             
         _type = new string[](length); 
@@ -163,6 +159,7 @@ contract Bank is IBank {
         
         // reset x
         x=0;
+        
         // reset length
         length = inRangeIndex+1;
         for(x ; x < length; x++) {
