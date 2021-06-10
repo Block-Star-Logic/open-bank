@@ -1,5 +1,5 @@
 # The Open Bank Project
-This is the open bank repository
+This is the Open Block Enterprise Initiative for the open bank project.
 ![Open Bank](https://github.com/Block-Star-Logic/open-bank/blob/4febac0d7ebd954b81114efef05f1f6c63cad3dc/images/Open%20Bank%20Logo.png)
 
 **Why?**
