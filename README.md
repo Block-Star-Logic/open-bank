@@ -1,6 +1,8 @@
 # The Open Bank Project
+
+<img src="https://github.com/Block-Star-Logic/open-bank/blob/d1390078e9bec056ae147c8283fe046c8d6b0146/images/open_bank_logo.png" width="75" height="75"/>
 This is the Open Block Enterprise Initiative for the open bank project.
-![Open Bank](https://github.com/Block-Star-Logic/open-bank/blob/4febac0d7ebd954b81114efef05f1f6c63cad3dc/images/Open%20Bank%20Logo.png)
+
 
 **Why?**
 
