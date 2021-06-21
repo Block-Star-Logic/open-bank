@@ -7,7 +7,6 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contr
 
 contract Bank is IBank { 
     
-    
     mapping(uint256=>Transaction) transactionByTransactionReference; 
     mapping(string=>bool) initatorRefKnownStatusByinitiatorReference;
     mapping(uint256=>bool) transactionRefKnownStatusByTransactionReference; 
@@ -30,8 +29,6 @@ contract Bank is IBank {
     }
     
     Transaction [] txnLog; 
-    
-    
     
     constructor(
                 address _administrator, 
@@ -150,28 +147,28 @@ contract Bank is IBank {
             }
         }
             
-        _type = new string[](length); 
-        _initiatorRef = new string[](length);
-        _date = new uint256[](length); 
-        _amount = new uint256[](length);
-        _initiator = new address[](length); 
-        _receipient = new address[](length); 
-        _txnRef = new uint256[](length);
+        _type = new string[](inRangeIndex); 
+        _initiatorRef = new string[](inRangeIndex);
+        _date = new uint256[](inRangeIndex); 
+        _amount = new uint256[](inRangeIndex);
+        _initiator = new address[](inRangeIndex); 
+        _receipient = new address[](inRangeIndex); 
+        _txnRef = new uint256[](inRangeIndex);
         
         // reset x
-        x=0;
+        uint256 y = 0;
         
         // reset length
-        length = inRangeIndex+1;
-        for(x ; x < length; x++) {
-            Transaction memory result = results[x];
-            _type[x] =  result._type;  
-            _initiatorRef[x] =  result._initiatorRef; 
-            _date[x] =  result._date; 
-            _amount[x] =  result._amount; 
-            _initiator[x] =  result._initiator; 
-            _receipient[x] =  result._reciepient;
-            _txnRef[x] =  result._txnRef; 
+        
+        for(y ; y < inRangeIndex; y++) {
+            Transaction memory result = results[y];
+            _type[y] =  result._type;  
+            _initiatorRef[y] =  result._initiatorRef; 
+            _date[y] =  result._date; 
+            _amount[y] =  result._amount; 
+            _initiator[y] =  result._initiator; 
+            _receipient[y] =  result._reciepient;
+            _txnRef[y] =  result._txnRef; 
         }
         
         return (_type, _initiatorRef, _date, _amount, _initiator, _receipient, _txnRef); 
