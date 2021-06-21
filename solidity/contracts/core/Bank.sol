@@ -51,7 +51,7 @@ contract Bank is IBank {
      * this will deposit the given amount into the bank and issue a deposit reference 
      */ 
     function deposit(uint256 _amount, string memory _depositReference) override payable external returns (uint256 _bankBalance, uint256 _depositTime, uint256 _txnRef){
-        // @todo access security
+        applyBasicSecurity();
         require(!initatorRefKnownStatusByinitiatorReference[_depositReference]," d00 - duplicate deposit reference");
         require(_amount > 0, "d01 - malicious deposit amount ");
         if(!native) { // not ETH
@@ -79,7 +79,7 @@ contract Bank is IBank {
      * this will withdraw the given amount from the bank and issue a withdrawal reference 
      */ 
     function withdraw(uint256 _amount, string memory _withdrawalReference,  address payable _payoutAddress) override external returns (uint256 _bankBalance, uint256 _withdrawalTime, uint256 _txnRef){
-        // @todo access security
+        applyBasicSecurity();
         require(!initatorRefKnownStatusByinitiatorReference[_withdrawalReference], "w00 - duplicate withdrawal reference"); 
         require(_amount > 0, "w01 - malicious withdrawal amount ");
         require(bankBalance > 0 && bankBalance >= _amount, "w02 insufficient funds ");
@@ -108,11 +108,12 @@ contract Bank is IBank {
      * this will return the ERC20 currency that this bank supports. It will return address(0) for ETH 
      */ 
     function getCurrencyContract() override external view returns (address _currencyContract){
+        applyBasicSecurity();
         return erc20Contract;
     }
 
     function findTransaction(uint256 txnRef) override external view returns (string memory _type, string memory _initiatorRef, uint256 _date, uint256 _amount, address _initiator, address _reciepient, uint256 _txnRef) {
-        // @todo access security
+        applyBasicSecurity();
         require(transactionRefKnownStatusByTransactionReference[txnRef], "ft00 - unkown transaction reference");
         Transaction memory transaction = transactionByTransactionReference[txnRef];
         return (transaction._type,transaction._initiatorRef, transaction._date, transaction._amount, transaction._initiator, transaction._reciepient, transaction._txnRef );
@@ -121,8 +122,8 @@ contract Bank is IBank {
     /**
      * this will return the balance of the bank at the given point in time. NOTE: this is not the same as the balance of the contract 
      */
-    function getBankBalance() override external view  returns (uint256 _balance, uint256 _date){
-        // @todo access security
+    function getBankBalance() override external view returns (uint256 _balance, uint256 _date){
+        applyBasicSecurity();
         return (bankBalance, block.timestamp); 
     }
 
@@ -133,7 +134,7 @@ contract Bank is IBank {
                                                                                                 address [] memory  _initiator, 
                                                                                                 address [] memory  _receipient, 
                                                                                                 uint256 [] memory  _txnRef) {
-        // @todo access security
+        applyBasicSecurity();
         
         uint256 length = txnLog.length; 
         Transaction [] memory results = new Transaction[](length);
@@ -180,6 +181,11 @@ contract Bank is IBank {
         uint256 txnRef = block.timestamp;
         transactionRefKnownStatusByTransactionReference[txnRef] = true; 
         return txnRef;
+    }
+
+    function applyBasicSecurity() internal view returns (bool _isAllowed){
+        require(msg.sender == administrator, " abs 00 - bank administrator only ");
+        return true; 
     }
 
 }
