@@ -10,7 +10,8 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 near-sdk = "3.1.0"
 chrono = "0.4.19"
-serde = { version = "1.0", features = ["derive"] }
+serde = "1.0.57"
+# obei_or_near_core = { path= "C:/work/in_repo/open-roles/blockchain_near/rust/obei_or_near_core" }
 
 [profile.release]
 codegen-units = 1
