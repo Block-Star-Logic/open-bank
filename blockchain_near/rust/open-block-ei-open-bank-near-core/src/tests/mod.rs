@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use near_sdk::{env,};
 use chrono::Utc;
 use near_sdk::{testing_env, VMContext};
@@ -39,7 +41,17 @@ fn get_default_ob() -> super::OpenBank {
     let request_debit_amount = 1; 
     let mock_or_account = "mock_or_account";
 
-    let mut ob =  super::OpenBank::new(); 
+    let mut ob =  super::OpenBank::new(
+        "test bank".to_string(),
+        "test_deployed_account.testnet".to_string(),
+        "NEAR".to_string(),
+        "testowner.testnet".to_string(),
+        "testnominee.testnet".to_string(),
+        "testopenroles.testnet".to_string(),
+        20,
+        10,
+        true,
+    ); 
 
     ob.set_obei_open_roles(mock_or_account.to_string());
     ob.set_open_bank_name("test_bank".to_string());
@@ -56,7 +68,7 @@ fn test_view_nominee_account_id (){
 
     testing_env!(context);
     let ob = get_default_ob();
-    assert!("robert.testnet".as_bytes() == ob.view_nominee_account_id().as_bytes())    
+    assert!("testnominee.testnet".as_bytes() == ob.view_nominee_account_id().as_bytes())    
 }
 
 #[test]// done
@@ -119,8 +131,7 @@ fn test_is_valid_payment_ref () {
 
     let context = get_context(vec![], false);
     testing_env!(context);
-    let payment_ref = 0; 
-
+   
     let mut ob = get_default_ob(); 
     let nonce = Utc::now().timestamp_millis() as u64;
     let pay_in_amount = 10;
@@ -142,38 +153,6 @@ fn test_pay_in () {
     assert_eq!(30, ob.view_balance());
 }
 
-#[test] // @onchain
-fn test_pay_out () {
-
-    let context = get_context_with_deposit(vec![], false, 10);
-    testing_env!(context);
-    
-    let mut ob = get_default_ob();     
-
- 
-
-}
-
-#[test] 
-fn test_pay_out_multi () {
-
-    let context = get_context(vec![], false);
-    testing_env!(context);
-    let ob = get_default_ob();   
-    
-    // need fix 
-}
-
-#[test]// 
-fn test_request_debit () {
-
-    let context = get_context(vec![], false);
-    testing_env!(context);
-    let ob = get_default_ob();     
-
-    // cross contract 
-
-}
 
 #[test] // @done
 fn test_register_request_debit (){
@@ -365,7 +344,7 @@ fn test_is_secure () {
 }
 
 #[test] // @internal @done
-#[should_panic (expected = "Repeat nonce detected")]
+#[should_panic (expected = "REPEAT NONCE DETECTED")]
 fn test_check_nonce () {
 
     let context = get_context(vec![], false);
@@ -380,7 +359,7 @@ fn test_check_nonce () {
 }
 
 #[test] // @internal @done 
-#[should_panic (expected = "Insufficient funds available")]
+#[should_panic (expected = "INSUFFICIENT FUNDS AVAILABLE")]
 fn test_check_bank_balance (){
     
     let context = get_context(vec![], false);
@@ -392,7 +371,7 @@ fn test_check_bank_balance (){
 }
 
 #[test] // @internal @done
-#[should_panic (expected = "Request debit reference not found")]
+#[should_panic (expected = "REQUEST DEBIT REFERENCE NOT FOUND")]
 fn test_check_is_valid_request_debit_reference () {
 
     let context = get_context(vec![], false);
@@ -404,7 +383,7 @@ fn test_check_is_valid_request_debit_reference () {
 }
 
 #[test] // @internal @done
-#[should_panic (expected = "Invalid status for action")]
+#[should_panic (expected = "INVALID STATUS FOR ACTION")]
 fn test_check_request_debit_status () {
 
     let context = get_context(vec![], false);
@@ -415,7 +394,7 @@ fn test_check_request_debit_status () {
 }
 
 #[test] // @internal @done
-#[should_panic (expected = "Deposit mis-match")]
+#[should_panic (expected = "DEPOSIT MIS-MATCH")]
 fn test_check_attachment_vs_stated_amount () {
 
     let context = get_context_with_deposit(vec![], false, 10);
@@ -427,7 +406,7 @@ fn test_check_attachment_vs_stated_amount () {
 }
 
 #[test] // @internal @done
-#[should_panic (expected = "Request Debit claim period not started")]
+#[should_panic (expected = "REQUEST DEBIT CLAIM PERIOD NOT STARTED")]
 fn test_check_request_debit_interval () { 
 
     let context = get_context(vec![], false);
@@ -437,7 +416,7 @@ fn test_check_request_debit_interval () {
     let request_debit_amount = 1; 
     let start_date : i64 = Utc::now().timestamp_millis() + (24*60*60*1000); 
     let end_date: i64 = start_date + (30*24*60*60*1000);
-    let interval  = (7*24*60*60*1000);
+    let interval  = 7*24*60*60*1000;
     let nonce = Utc::now().timestamp_millis() as u64;
     
     let rd_ref : u64 = ob.register_request_debit("test_account_2.testnet".to_string(), "test request debit".to_string(), request_debit_amount, interval, start_date, end_date, nonce);
@@ -477,15 +456,6 @@ fn test_increment_bank_balance () {
     assert_eq!(bal+1, ob.view_balance());
 }
 
-#[test] // internal
-fn test_get_total () {
-
-    let context = get_context(vec![], false);
-    testing_env!(context);
-    let mut ob = get_default_ob(); 
-
-
-}
 
 #[test] // @internal @ done
 fn test_move_request_debit_by_status () {

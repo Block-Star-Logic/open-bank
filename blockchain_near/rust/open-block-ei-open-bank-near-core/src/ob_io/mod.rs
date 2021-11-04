@@ -8,7 +8,7 @@
 /// <br/>
 /// <br/> This module contains the structs that are exchanged between Open Bank and the dependent user be that dApp or UI
 //use near_sdk::serde::{Serialize, Deserialize};
-use near_sdk::{near_bindgen, json_types};
+use near_sdk::{near_bindgen};
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize };
 
 use std::collections::hash_map::DefaultHasher;
