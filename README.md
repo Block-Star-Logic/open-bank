@@ -28,7 +28,7 @@ Open Bank is currently supported on the following blockchains:
 
 <img src="https://github.com/Block-Star-Logic/open-bank/blob/fe419edfc9b7932a138dea9fa77030ed7222fafb/media/ethereum-logo-portrait-purple.png" width="50" height="40" alt="Ethereum Logo"/>[**Ethereum**](https://github.com/Block-Star-Logic/open-roles/tree/main/blockchain_ethereum)
 
-<img src="https://github.com/Block-Star-Logic/open-bank/blob/fe419edfc9b7932a138dea9fa77030ed7222fafb/media/near_logo_stack.png" width="40" height="50" alt="NEAR Logo"/>[**NEAR (31 October 2021)**](https://github.com/Block-Star-Logic/open-roles/tree/main/blockchain_near)
+<img src="https://github.com/Block-Star-Logic/open-bank/blob/fe419edfc9b7932a138dea9fa77030ed7222fafb/media/near_logo_stack.png" width="40" height="50" alt="NEAR Logo"/>(https://github.com/Block-Star-Logic/open-roles/tree/main/blockchain_near)
 
 ## Community
 
