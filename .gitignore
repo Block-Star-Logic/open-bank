@@ -1,4 +1,4 @@
-blockchain_near/rust/obei_ob_near_core/target/
+blockchain_near/rust/obei_ob_near_core/target/*.*
 blockchain_near/rust/open-block-ei-open-bank-near-core/package.json
 blockchain_near/rust/open-block-ei-open-bank-near-core/node_modules/.package-lock.json
 *.lock
