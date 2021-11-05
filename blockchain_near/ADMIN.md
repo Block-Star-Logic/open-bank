@@ -90,7 +90,7 @@ This operation triggers the cancellation of a Request Debit registration. <br/>
 
 ### Deposit
 This operation deposits the given amount into this OPEN BANK. The balance of this OPEN BANK should increase by the deposited amount<br/>
-```> near call ${bank deployed account id} deposit {"description":"${deposit description}","amount":${deposit amount},"nonce":${nonce}} ${deposit amount currency}--accountId ${nominee_account_id / authorised account id}```<br/>
+```> near call ${bank deployed account id} deposit {"description":"${deposit description}","amount":${deposit amount},"nonce":${nonce}} --amount ${deposit amount currency} --accountId ${nominee_account_id / authorised account id}```<br/>
 **CONSOLE RETURN:** Payment object describing this deposit
 
 ### Withdraw
@@ -115,7 +115,7 @@ Permissive operations are operations that operate on a **BARRING** principle i.e
 
 ### Pay In 
 This operation enables communities, users, dapps to make 'pay in's to this OPEN BANK <br/>
-```> near send ${bank deployed account id} pay_in {"payment_description":"${payment-description}", "payment_amount":${payment-amount}, "nonce":${nonce}} ${pay in amount} --accountId ${any account id} ``` <br/>
+```> near send ${bank deployed account id} pay_in {"payment_description":"${payment-description}", "payment_amount":${payment-amount}, "nonce":${nonce}} --amount ${pay in amount} --accountId ${any account id} ``` <br/>
 **CONSOLE RETURN:** Payment object describing this 'pay in'
 
 ### Request Debit 
