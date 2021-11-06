@@ -40,8 +40,8 @@ The key parameters are as follows:<br/>
   **e.** ```${owner account id}``` - account of the owner of this OPEN BANK instance<br/>
   **f.** ```${nominee account id}``` - account of the nominee that will either conduct deposits into the bank or make withdrawals from the OPEN BANK<br/> 
   **g.** ```${open roles account id}``` - account of the OPEN ROLES instance that manages the Role Matrix associated with this OPEN BANK<br/>
-  **h.** ```${secure code}``` - code transmitted by OPEN ROLES to indicate ALLOWED/NOT BARRED provided by OPEN ROLES Admin<br/> 
-  **i.** ```${in secure code}``` - code transmitted by OPEN ROLES to indicate NOT ALLOWED/BARRED provided by OPEN ROLES Admin<br/>
+  **h.** ```${affirmative code}``` - code transmitted by OPEN ROLES to indicate ALLOWED/BARRED provided by OPEN ROLES Admin<br/> 
+  **i.** ```${negative code}``` - code transmitted by OPEN ROLES to indicate NOT ALLOWED/NOT BARRED provided by OPEN ROLES Admin<br/>
   **j.** ```${true/false}``` - whether test mode is active or inactive for this instance of Open Bank<br/>
 5.Test your release is deployed with the following command:<br/>
 ```> near call ${bank deployed account id} get_version --accountId ${any account id}```<br/>
