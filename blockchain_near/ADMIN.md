@@ -31,7 +31,7 @@ NOTE:
 3. Log in to your NEAR account using:<br/>
 ``` > near login ```
 4. Deploy your selected release using the following command: <br/>
-```> near deploy openbank4.blockstarlogictest.testnet --wasmFile ${path to file}/open_block_ei_open_bank_near_core.wasm --initFunction new --initArgs {"bank_name":"${bank name}","bank_deployed_account_id":"${bank deployed account id}","denomination":"${bank currency denomination}","owner":"${owner account id}",												  "nominee_account_id":"${nominee account id}","open_roles_account_id":"${open roles account id}","affirmative_code":${affirmative code},"negative_code":${negative code},"test_mode":${true/false} --initGas 5000000000000 --initDeposit 0 ```<br/>
+```> near deploy openbank4.blockstarlogictest.testnet --wasmFile ${path to file}/open_block_ei_open_bank_near_core.wasm --initFunction new --initArgs {"bank_name":"${bank name}","bank_deployed_account_id":"${bank deployed account id}","denomination":"${bank currency denomination}","owner":"${owner account id}",												  "nominee_account_id":"${nominee account id}","open_roles_account_id":"${open roles account id}",																														  "secure_code":${secure code},"in_secure_code":${in secure code},"test_mode":${true/false} --initGas 5000000000000 --initDeposit 0 ```<br/>
 The key parameters are as follows:<br/>
   **a.** ```${path to file}``` - replace with the path do your downloaded ```.wasm``` release<br/>
   **b.** ```${bank name}``` - replace with the name of the instance - necessary once you go over more than one instance in your organisation<br/>
@@ -40,8 +40,8 @@ The key parameters are as follows:<br/>
   **e.** ```${owner account id}``` - account of the owner of this OPEN BANK instance<br/>
   **f.** ```${nominee account id}``` - account of the nominee that will either conduct deposits into the bank or make withdrawals from the OPEN BANK<br/> 
   **g.** ```${open roles account id}``` - account of the OPEN ROLES instance that manages the Role Matrix associated with this OPEN BANK<br/>
-  **h.** ```${affirmative code}``` - code transmitted by OPEN ROLES to indicate ALLOWED/BARRED provided by OPEN ROLES Admin<br/> 
-  **i.** ```${negative code}``` - code transmitted by OPEN ROLES to indicate NOT ALLOWED/NOT BARRED provided by OPEN ROLES Admin<br/>
+  **h.** ```${secure code}``` - code transmitted by OPEN ROLES to indicate ALLOWED/NOT BARRED provided by OPEN ROLES Admin<br/> 
+  **i.** ```${in secure code}``` - code transmitted by OPEN ROLES to indicate NOT ALLOWED/BARRED provided by OPEN ROLES Admin<br/>
   **j.** ```${true/false}``` - whether test mode is active or inactive for this instance of Open Bank<br/>
 5.Test your release is deployed with the following command:<br/>
 ```> near call ${bank deployed account id} get_version --accountId ${any account id}```<br/>
@@ -90,7 +90,7 @@ This operation triggers the cancellation of a Request Debit registration. <br/>
 
 ### Deposit
 This operation deposits the given amount into this OPEN BANK. The balance of this OPEN BANK should increase by the deposited amount<br/>
-```> near call ${bank deployed account id} deposit {"description":"${deposit description}","amount":${deposit amount},"nonce":${nonce}} --amount ${deposit amount currency} --accountId ${nominee_account_id / authorised account id}```<br/>
+```> near call ${bank deployed account id} deposit {"description":"${deposit description}","amount":${deposit amount},"nonce":${nonce}} ${deposit amount currency}--accountId ${nominee_account_id / authorised account id}```<br/>
 **CONSOLE RETURN:** Payment object describing this deposit
 
 ### Withdraw
@@ -115,7 +115,7 @@ Permissive operations are operations that operate on a **BARRING** principle i.e
 
 ### Pay In 
 This operation enables communities, users, dapps to make 'pay in's to this OPEN BANK <br/>
-```> near send ${bank deployed account id} pay_in {"payment_description":"${payment-description}", "payment_amount":${payment-amount}, "nonce":${nonce}} --amount ${pay in amount} --accountId ${any account id} ``` <br/>
+```> near send ${bank deployed account id} pay_in {"payment_description":"${payment-description}", "payment_amount":${payment-amount}, "nonce":${nonce}} ${pay in amount} --accountId ${any account id} ``` <br/>
 **CONSOLE RETURN:** Payment object describing this 'pay in'
 
 ### Request Debit 

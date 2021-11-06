@@ -8,12 +8,11 @@
 /// <br/>
 /// <br/> This module contains the structs that are exchanged between Open Bank and the dependent user be that dApp or UI
 //use near_sdk::serde::{Serialize, Deserialize};
-use near_sdk::{near_bindgen};
+use near_sdk::{near_bindgen, env};
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize };
 
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
-use chrono::{Utc};
 
 // #Payment 
 // The Payment struct represents the payments that are conducted by Open Bank. Transaction that has funds attached regardless of whether it is inbound or outbound from 
@@ -49,7 +48,7 @@ impl Payment {
                             description    : String, 
                             payment_type   : String,
                             status : String) -> Self {
-                                let payment_time = Utc::now().timestamp_millis();
+                                let payment_time = env::block_timestamp() as i64;
 
                                 let mut s = Self {
                                     payee, 
@@ -118,7 +117,7 @@ impl RequestDebit {
                                         amount,
                                         description, 
                                         payout_interval,
-                                        creation_date   : Utc::now().timestamp_millis(),
+                                        creation_date   : env::block_timestamp() as i64,
                                         last_paid       : 0, 
                                         start_date,
                                         end_date,

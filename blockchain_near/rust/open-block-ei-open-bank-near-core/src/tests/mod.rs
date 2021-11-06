@@ -4,6 +4,7 @@ use near_sdk::{env,};
 use chrono::Utc;
 use near_sdk::{testing_env, VMContext};
 use near_sdk::MockedBlockchain;
+use near_sdk::json_types::{U64, I64, U128};
 
 #[cfg(test)]
 fn get_context(input: Vec<u8>, is_view: bool) -> VMContext {
@@ -17,8 +18,8 @@ fn get_context_with_deposit(input: Vec<u8>, is_view: bool, attached_deposit : u1
         signer_account_pk: vec![0, 1, 2],
         predecessor_account_id: "jane.testnet".to_string(),
         input,
-        block_index: Utc::now().timestamp() as u64,
-        block_timestamp: Utc::now().timestamp() as u64,
+        block_index: Utc::now().timestamp_millis() as u64,
+        block_timestamp: Utc::now().timestamp_millis() as u64,
         account_balance: 0,
         account_locked_balance: 0,
         storage_usage: 0,
@@ -33,12 +34,12 @@ fn get_context_with_deposit(input: Vec<u8>, is_view: bool, attached_deposit : u1
 
 fn get_default_ob() -> super::OpenBank {
 
-    let start_date : i64 = Utc::now().timestamp_millis();
-    let end_date: i64 = start_date + (24*60*60*1000);
-    let interval  = 60;
-    let nonce = env::block_timestamp();
-    let pay_in_amount = 10; 
-    let request_debit_amount = 1; 
+    let start_date = I64(Utc::now().timestamp_millis());
+    let end_date= I64(i64::from(start_date) + (24*60*60*1000));
+    let interval  = I64(60);
+    let nonce = U64(env::block_timestamp());
+    let pay_in_amount = U128(10); 
+    let request_debit_amount = U128(1); 
     let mock_or_account = "mock_or_account";
 
     let mut ob =  super::OpenBank::new(
@@ -57,7 +58,8 @@ fn get_default_ob() -> super::OpenBank {
     ob.set_open_bank_name("test_bank".to_string());
 
     ob.pay_in("test_payment".to_string(), pay_in_amount, nonce);
-    ob.register_request_debit("testaccount.testnet".to_string(), "test request debit".to_string(), request_debit_amount, interval, start_date, end_date, nonce+1);
+    let new_nonce = U64(env::block_timestamp()+11);
+    ob.register_request_debit("testaccount.testnet".to_string(), "test request debit".to_string(), request_debit_amount, interval, start_date, end_date, new_nonce);
            
     ob
 }
@@ -77,7 +79,7 @@ fn test_view_balance () {
     let context = get_context(vec![], false);        
     testing_env!(context);    
     let mut ob = get_default_ob();
-    assert_eq!(20, ob.view_balance() )
+    assert_eq!(20, u128::from(ob.view_balance()) )
 }
 
 #[test]// done
@@ -87,13 +89,13 @@ fn test_find_request_debit () {
     testing_env!(context);
     let mut ob = get_default_ob(); 
 
-    let start_date : i64 = Utc::now().timestamp_millis();
-    let end_date: i64 = start_date + (24*60*60*1000);
-    let interval  = 60;
-    let nonce = Utc::now().timestamp_millis() as u64;
-    let request_debit_amount = 1; 
+    let start_date = I64(Utc::now().timestamp_millis());
+    let end_date =  I64(i64::from(start_date) + (24*60*60*1000));
+    let interval  = I64(60);
+    let nonce = U64((Utc::now().timestamp_millis()+16) as u64);
+    let request_debit_amount = U128(1); 
 
-    let request_debit_reference :u64 = ob.register_request_debit("testaccount.testnet".to_string(), "test request debit".to_string(), request_debit_amount, interval, start_date, end_date, nonce);
+    let request_debit_reference = ob.register_request_debit("testaccount.testnet".to_string(), "test request debit".to_string(), request_debit_amount, interval, start_date, end_date, nonce);
 
     let request_debit = ob.find_request_debit(request_debit_reference);
     assert_eq!("testaccount.testnet", request_debit.payee)
@@ -118,12 +120,12 @@ fn test_find_payment () {
     testing_env!(context);
     let mut ob = get_default_ob(); 
 
-    let nonce = Utc::now().timestamp_millis() as u64;
-    let pay_in_amount = 10; 
-    let payment_ref = ob.pay_in("test_payment".to_string(), pay_in_amount, nonce).reference; 
+    let nonce = U64((Utc::now().timestamp_millis()+12) as u64);
+    let pay_in_amount = U128(10); 
+    let payment_ref = U64(ob.pay_in("test_payment".to_string(), pay_in_amount, nonce).reference); 
     let payment = ob.find_payment(payment_ref);
     
-    assert_eq!(pay_in_amount, payment.amount)
+    assert_eq!(10, payment.amount)
 }
 
 #[test] // done
@@ -133,9 +135,9 @@ fn test_is_valid_payment_ref () {
     testing_env!(context);
    
     let mut ob = get_default_ob(); 
-    let nonce = Utc::now().timestamp_millis() as u64;
-    let pay_in_amount = 10;
-    let payment_ref = ob.pay_in("test_payment".to_string(), pay_in_amount, nonce).reference; 
+    let nonce = U64((Utc::now().timestamp_millis()+13) as u64);
+    let pay_in_amount = U128(10);
+    let payment_ref = U64(ob.pay_in("test_payment".to_string(), pay_in_amount, nonce).reference); 
 
     assert!(ob.is_valid_payment_ref(payment_ref))
 }
@@ -148,9 +150,9 @@ fn test_pay_in () {
 
     let mut ob = get_default_ob();     
 
-    ob.pay_in("next_test_payment".to_string(), 10,Utc::now().timestamp_millis() as u64);
+    ob.pay_in("next_test_payment".to_string(), U128(10) ,U64((Utc::now().timestamp_millis()+14) as u64));
 
-    assert_eq!(30, ob.view_balance());
+    assert_eq!(30,u128::from(ob.view_balance()));
 }
 
 
@@ -161,13 +163,13 @@ fn test_register_request_debit (){
     testing_env!(context);
     let mut ob = get_default_ob();     
     
-    let request_debit_amount = 1; 
-    let start_date : i64 = Utc::now().timestamp_millis(); 
-    let end_date: i64 = start_date + (24*60*60*1000);
-    let interval  = 60;
-    let nonce = Utc::now().timestamp_millis() as u64;
+    let request_debit_amount = U128(1); 
+    let start_date  = I64(Utc::now().timestamp_millis()); 
+    let end_date= I64(i64::from(start_date) + (24*60*60*1000));
+    let interval  = I64(60);
+    let nonce = U64((Utc::now().timestamp_millis()+15) as u64);
 
-    let rd_ref : u64 = ob.register_request_debit("test_account_2.testnet".to_string(), "test request debit".to_string(), request_debit_amount, interval, start_date, end_date, nonce);
+    let rd_ref  = ob.register_request_debit("test_account_2.testnet".to_string(), "test request debit".to_string(), request_debit_amount, interval, start_date, end_date, nonce);
 
     let rd = ob.find_request_debit(rd_ref);
 
@@ -183,19 +185,19 @@ fn test_approve_request_debit (){
     testing_env!(context);
     let mut ob = get_default_ob();  
     
-    let request_debit_amount = 1; 
-    let start_date : i64 = Utc::now().timestamp_millis(); 
-    let end_date: i64 = start_date + (24*60*60*1000);
-    let interval  = 60;
-    let nonce = Utc::now().timestamp_millis() as u64;
+    let request_debit_amount = U128(1);
+    let start_date = I64(Utc::now().timestamp_millis()); 
+    let end_date = I64(i64::from(start_date) + (24*60*60*1000));
+    let interval  = I64(60);
+    let nonce = U64(Utc::now().timestamp_millis() as u64);
     
-    let rd_ref : u64 = ob.register_request_debit("test_account_2.testnet".to_string(), "test request debit".to_string(), request_debit_amount, interval, start_date, end_date, nonce);
+    let rd_ref = ob.register_request_debit("test_account_2.testnet".to_string(), "test request debit".to_string(), request_debit_amount, interval, start_date, end_date, nonce);
 
     let rd = ob.find_request_debit(rd_ref);
 
     assert_eq!(rd.status, "PENDING");
 
-    ob.approve_request_debit(rd_ref.clone(), Utc::now().timestamp_millis() as u64);
+    ob.approve_request_debit(rd_ref.clone(), U64(Utc::now().timestamp_millis() as u64));
 
     let rd1 = ob.find_request_debit(rd_ref);
     
@@ -209,21 +211,21 @@ fn test_cancel_request_debit () {
     testing_env!(context);
     let mut ob = get_default_ob(); 
 
-    let request_debit_amount = 1; 
-    let start_date : i64 = Utc::now().timestamp_millis(); 
-    let end_date: i64 = start_date + (24*60*60*1000);
-    let interval  = 60;
-    let nonce = Utc::now().timestamp_millis() as u64;
+    let request_debit_amount = U128(1);
+    let start_date = I64(Utc::now().timestamp_millis()); 
+    let end_date = I64(i64::from(start_date) + (24*60*60*1000));
+    let interval  = I64(60);
+    let nonce = U64(Utc::now().timestamp_millis() as u64);
 
-    let rd_ref : u64 = ob.register_request_debit("test_account_2.testnet".to_string(), "test request debit".to_string(), request_debit_amount, interval, start_date, end_date, nonce);
+    let rd_ref = ob.register_request_debit("test_account_2.testnet".to_string(), "test request debit".to_string(), request_debit_amount, interval, start_date, end_date, nonce);
 
     let rd = ob.find_request_debit(rd_ref);
 
     assert_ne!(rd.status, "CANCELLED");
 
-    ob.cancel_request_debit(rd_ref, Utc::now().timestamp_millis() as u64);
+    ob.cancel_request_debit(rd_ref, U64(Utc::now().timestamp_millis() as u64));
     
-    println!(" rd ref {} ", rd_ref);
+    println!(" rd ref {} ", u64::from(rd_ref));
 
     let rd2 = ob.find_request_debit(rd_ref);
 
@@ -244,16 +246,20 @@ fn test_deposit () {
     let mut ob = get_default_ob(); 
 
     let bal = ob.view_balance();
+    
+    let amount = U128(10);
 
-    let payment = ob.deposit("test deposit".to_string(),10, Utc::now().timestamp_millis() as u64);
+    let payment = ob.deposit("test deposit".to_string(),amount, U64((Utc::now().timestamp_millis()+17) as u64));
 
-    let test_payment = ob.find_payment(payment.reference);
+    let test_payment = ob.find_payment(U64(payment.reference));
 
     let test_bal = ob.view_balance(); 
 
     assert_eq!(payment, test_payment);
 
-    assert_eq!(bal+10, test_bal)
+    let total = u128::from(bal)+u128::from(amount);
+
+    assert_eq!(total, u128::from(test_bal))
 
 }
 
@@ -313,7 +319,7 @@ fn test_create_and_register_payment () {
     let payment_type = "TEST".to_ascii_lowercase();
     let payment = ob.create_and_register_payment(payee, payer, signer, amount, description, payment_status, payment_type); 
 
-    let test_payment = ob.find_payment(payment.reference);
+    let test_payment = ob.find_payment(U64(payment.reference));
 
     assert_eq!(test_payment, payment);
 
@@ -406,20 +412,20 @@ fn test_check_attachment_vs_stated_amount () {
 }
 
 #[test] // @internal @done
-#[should_panic (expected = "REQUEST DEBIT CLAIM PERIOD NOT STARTED")]
+#[should_panic (expected = "PAY OUT INTERVAL NOT REACHED")]
 fn test_check_request_debit_interval () { 
 
     let context = get_context(vec![], false);
     testing_env!(context);
     let mut ob = get_default_ob();   
     
-    let request_debit_amount = 1; 
-    let start_date : i64 = Utc::now().timestamp_millis() + (24*60*60*1000); 
-    let end_date: i64 = start_date + (30*24*60*60*1000);
-    let interval  = 7*24*60*60*1000;
-    let nonce = Utc::now().timestamp_millis() as u64;
+    let request_debit_amount = U128(1);
+    let start_date = I64(Utc::now().timestamp_millis()-600000); 
+    let end_date = I64(i64::from(start_date) + (24*60*60*1000));
+    let interval  = I64(30000000000);
+    let nonce = U64(Utc::now().timestamp_millis() as u64);
     
-    let rd_ref : u64 = ob.register_request_debit("test_account_2.testnet".to_string(), "test request debit".to_string(), request_debit_amount, interval, start_date, end_date, nonce);
+    let rd_ref = ob.register_request_debit("test_account_2.testnet".to_string(), "test request debit".to_string(), request_debit_amount, interval, start_date, end_date, nonce);
 
     let request_debit = ob.find_request_debit(rd_ref); 
 
@@ -438,7 +444,9 @@ fn test_decrement_bank_balance () {
 
     ob.decrement_bank_balance(1);
 
-    assert_eq!(bal-1, ob.view_balance());
+    let total =U128(u128::from(bal) - 1); 
+
+    assert_eq!(total, ob.view_balance());
     
 }
 
@@ -453,7 +461,9 @@ fn test_increment_bank_balance () {
 
     ob.increment_bank_balance(1);
 
-    assert_eq!(bal+1, ob.view_balance());
+    let total = U128(u128::from(bal) + 1);
+
+    assert_eq!(total, ob.view_balance());
 }
 
 
@@ -464,13 +474,13 @@ fn test_move_request_debit_by_status () {
     testing_env!(context);
     let mut ob = get_default_ob();  
     
-    let request_debit_amount = 1; 
-    let start_date : i64 = Utc::now().timestamp_millis() as i64; 
-    let end_date: i64 = start_date + (24*60*60*1000);
-    let interval  = 60;
-    let nonce = Utc::now().timestamp_millis() as u64;
-    
-    let rd_ref : u64 = ob.register_request_debit("test_account_2.testnet".to_string(), "test request debit".to_string(), request_debit_amount, interval, start_date, end_date, nonce+1);
+    let request_debit_amount = U128(1);
+    let start_date = I64(Utc::now().timestamp_millis()); 
+    let end_date = I64(i64::from(start_date) + (24*60*60*1000));
+    let interval  = I64(60);
+    let nonce = U64(Utc::now().timestamp_millis() as u64);
+    let new_nonce = U64((Utc::now().timestamp_millis()+10) as u64);
+    let rd_ref = ob.register_request_debit("test_account_2.testnet".to_string(), "test request debit".to_string(), request_debit_amount, interval, start_date, end_date, new_nonce);
 
     let rd = ob.find_request_debit(rd_ref);     
 

@@ -29,10 +29,10 @@ mod ob_io;
 mod tests; 
 
 use std::collections::{HashMap, HashSet};
-use chrono::{Utc};
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::{env, near_bindgen,  ext_contract, PromiseResult, Promise, PromiseOrValue,};
+use near_sdk::{env, near_bindgen,  ext_contract, json_types, PromiseResult, Promise, PromiseOrValue,};
+use near_sdk::json_types::{U64, I64, U128};
 use ob_io::{RequestDebit, Payment, MultiPaymentRequest};
 
 near_sdk::setup_alloc!();
@@ -71,8 +71,8 @@ struct OpenBank {
     access_security             : near_sdk::AccountId, 
     nonce_register              : HashMap<String, HashSet<u64>>,
     test_mode                   : bool,
-    secure_code                 : i32, 
-    in_secure_code              : i32, 
+    affirmative_code            : i32, 
+    negative_code               : i32, 
 }
 
 #[near_bindgen]
@@ -112,9 +112,9 @@ impl OpenBank {
     /// this operation will return the total balance of this bank in the denomination of the bank 
     /// [**governed**], [**non-payable**]
     /// # Return Value 
-    pub fn view_balance(&mut self) -> u128 {
+    pub fn view_balance(&mut self) -> U128 {
         if self.is_secure( "view_balance".to_string(), "ALLOWED".to_string()) {
-            return self.bank_balance;
+            return U128::from(self.bank_balance);
         }     
         panic!("BALANCE VIEW NOT ALLOWED - IN SECURE ACCOUNT {} ",env::signer_account_id());
     }
@@ -125,7 +125,7 @@ impl OpenBank {
     /// *in_secure_code* - code used to determine if a user is in secure
     pub fn check_secure_codes(&mut self) ->(i32, i32) {
         if self.is_secure( "check_secure_codes".to_string(), "ALLOWED".to_string()) {
-            return (self.secure_code.clone(), self.in_secure_code.clone())
+            return (self.affirmative_code.clone(), self.negative_code.clone())
         }
         panic!("SECURE CODE VIEW NOT ALLOWED - IN SECURE ACCOUNT {} ",env::signer_account_id());
     }
@@ -144,7 +144,8 @@ impl OpenBank {
     /// # Return Value
     /// Request Debit struct matching the provided reference 
     /// @panic if unknown reference provided 
-    pub fn find_request_debit(&self, request_debit_reference : u64)-> ob_io::RequestDebit  {
+    pub fn find_request_debit(&self, u_request_debit_reference : U64)-> ob_io::RequestDebit  {
+        let request_debit_reference = u64::from(u_request_debit_reference);
         if !self.request_debit_by_reference.contains_key(&request_debit_reference) {
             panic!("UNKNOWN REQUEST DEBIT REFERENCE {} ", request_debit_reference);
         }
@@ -168,7 +169,8 @@ impl OpenBank {
     /// # Return Value
     /// **Payment** struct matching payment reference 
     /// @panic if unknown payment reference provided
-    pub fn find_payment(&self, payment_ref :u64) -> ob_io::Payment {
+    pub fn find_payment(&self, u_payment_ref :U64) -> ob_io::Payment {
+        let payment_ref = u64::from(u_payment_ref);
         if !self.payments_by_reference.contains_key(&payment_ref)  {
             panic!("UNKNOWN PAYMENT REFERENCE {} ", payment_ref);
         }
@@ -178,7 +180,8 @@ impl OpenBank {
     /// [**ungoverned**], [**non-payable**] 
     /// # Return Value 
     /// **true** if and only if the payment reference is valid 
-    pub fn is_valid_payment_ref(&self, payment_ref : u64) -> bool {
+    pub fn is_valid_payment_ref(&self, u_payment_ref :U64) -> bool {
+        let payment_ref = u64::from(u_payment_ref);
         self.payments_by_reference.contains_key(&payment_ref)
     } 
 
@@ -187,9 +190,9 @@ impl OpenBank {
     /// # Return Value
     /// **Payment** struct containing  details of the "pay in" made
     #[payable]
-    pub fn pay_in(&mut self, payment_description :  String ,  payment_amount : u128, nonce : u64)->  ob_io::Payment {
+    pub fn pay_in(&mut self, payment_description :  String ,  pay_in_amount : U128, nonce : U64)->  ob_io::Payment {
         // check nonce
-        self.check_nonce(nonce);
+        self.check_nonce(u64::from(nonce));
 
         let signer_account_id = env::signer_account_id();
         
@@ -197,18 +200,20 @@ impl OpenBank {
         let security_response = self.is_secure("pay_in".to_string(), "BARRED".to_string());
         self.require(security_response, format!("PAY IN NOT ALLOWED. ACCOUNT {} BARRED", signer_account_id));
 
+        let stated_amount = u128::from(pay_in_amount);
+
         // check amounts
-        let amount = env::attached_deposit();
-        self.check_attachment_vs_stated_amount(payment_amount, amount);
+        let attached_amount = env::attached_deposit();
+        self.check_attachment_vs_stated_amount(attached_amount, stated_amount);
 
         // increment the bank balance
-        self.increment_bank_balance(payment_amount);
+        self.increment_bank_balance(stated_amount);
 
         self.create_and_register_payment(  
                                             self.bank_deployed_account_id.clone(), 
                                             signer_account_id, 
                                             env::signer_account_id(), 
-                                            payment_amount, 
+                                            stated_amount, 
                                             payment_description,
                                             "COMPLETED".to_string(),
                                             "PAY_IN".to_string())
@@ -219,14 +224,16 @@ impl OpenBank {
     /// [**governed**], [**non-payable**]
     /// # Return Value 
     /// **Payment** object with details of the pay out made 
-    pub fn pay_out(&mut self, description : String, amount :u128, account_id : String, nonce : u64) -> ob_io::Payment {
+    pub fn pay_out(&mut self, description : String, payout_amount : U128, account_id : String, nonce : U64) -> ob_io::Payment {
         // check nonce 
-        self.check_nonce(nonce);
+        self.check_nonce(u64::from(nonce));
         
         let signer_account_id = env::signer_account_id();
 
         let security_response = self.is_secure("payout".to_string(), "ALLOWED".to_string());
         self.require(security_response, format!("PAY OUT CANCELLED. ACCOUNT {} NOT ALLOWED", signer_account_id));
+
+        let amount = u128::from(payout_amount);
 
         // check bank balance 
         self.check_bank_balance(amount);
@@ -246,9 +253,9 @@ impl OpenBank {
     /// [**governed**], [**non-payable**] 
     /// #Return Value 
     /// **HashSet** of **Payment** structs conaining information on the payments made     
-    pub fn pay_out_multi(&mut self, multi_payment_requests : HashSet<MultiPaymentRequest>, nonce : u64) -> HashSet<Payment> {
+    pub fn pay_out_multi(&mut self, multi_payment_requests : HashSet<MultiPaymentRequest>, nonce : U64) -> HashSet<Payment> {
         // check nonce 
-        self.check_nonce(nonce);
+        self.check_nonce(u64::from(nonce));
 
         let signer_account_id = env::signer_account_id();
         
@@ -286,26 +293,27 @@ impl OpenBank {
     
     }
 
-
     /// This operation will trigger the payment of the RequestDebit associated wqith the 'request_debit_ref'. Funds will be sent to the account id attached to the RequestDebit *not* the caller
     /// [**governed**] - [BARRING], [**non-payable**]
     /// # Return Value 
     /// **Payment** struct with details of the payment to the Request Debit 
-    pub fn request_debit(&mut self, request_debit_ref : u64, nonce : u64) -> ob_io::Payment {
-        self.check_nonce(nonce);
+    pub fn request_debit(&mut self, request_debit_ref : U64, nonce : U64) -> ob_io::Payment {
+        
+        // check nonce
+        self.check_nonce(u64::from(nonce));
+
         let signer_account_id = env::signer_account_id();
 
         let security_response = self.is_secure("request_debit".to_string(), "BARRED".to_string());
         self.require(security_response, format!("REQUEST DEBIT PAY OUT CANCELLED. ACCOUNT {} REQUEST DEBIT CLAIM NOT ALLOWED", signer_account_id));
 
         let request_debit  = self.find_request_debit(request_debit_ref); 
-        // check nonce 
-        self.check_nonce(nonce);
 
         // check request debit status 
         self.check_request_debit_status(request_debit.status.clone(), "APPROVED".to_string());
 
         let rd = self.find_request_debit(request_debit_ref); 
+
         // check last paid vs interval 
         self.check_request_debit_interval( rd); 
 
@@ -319,7 +327,7 @@ impl OpenBank {
 
         let mut rdp = self.find_request_debit(request_debit_ref); 
         // update the request_debit last paid date to now 
-        rdp.last_paid = Utc::now().timestamp_millis(); 
+        rdp.last_paid = env::block_timestamp() as i64;
 
         let rdc = self.find_request_debit(request_debit_ref); 
         // pay to the payee
@@ -336,19 +344,21 @@ impl OpenBank {
     pub fn register_request_debit(&mut self, 
                                     payee           : String,
                                     description     : String, 
-                                    amount          : u128, 
-                                    payout_interval : i64, 
-                                    start_date      : i64, 
-                                    end_date        : i64, 
-                                    nonce : u64)-> u64 {
-        self.check_nonce(nonce);
+                                    amount          : U128, 
+                                    payout_interval : I64, 
+                                    start_date      : I64, 
+                                    end_date        : I64, 
+                                    nonce : U64)-> U64 {
+        self.check_nonce(u64::from(nonce));
 
         let signer_account_id = env::signer_account_id();
 
         let security_response = self.is_secure("register_request_debit".to_string(), "BARRED".to_string());
         self.require(security_response, format!("REQUEST DEBIT REGISTRATION CANCELLED. ACCOUNT {} NOT ALLOWED", signer_account_id));
         
-        let request_debit = ob_io::RequestDebit::create_request_debit(payee, amount, description, payout_interval, start_date, end_date, signer_account_id);
+        let debit_amount = u128::from(amount);
+
+        let request_debit = ob_io::RequestDebit::create_request_debit(payee, debit_amount, description, i64::from(payout_interval), i64::from(start_date), i64::from(end_date), signer_account_id);
         let rd_clone = request_debit.clone();
         let rd_reference = request_debit.reference.clone();
 
@@ -363,22 +373,22 @@ impl OpenBank {
         else {
             self.request_debits_by_status.get_mut(&rd_clone.status).unwrap().insert(rd_clone);
         }
-        rd_reference
+        U64(rd_reference)
     }
 
     /// This operation will 'approve' the 'RequestDebit' associated with the given 'request_debit_ref'. Once approved the 'RequestDebit can be drawn down after the start date 
     /// This operation is [**governed**], [**non-payable**] 
     /// # Return Value
-    pub fn approve_request_debit(&mut self, request_debit_ref : u64, nonce: u64) -> u64 {
+    pub fn approve_request_debit(&mut self, request_debit_ref : U64, nonce: U64) -> U64 {
         
-        self.check_nonce(nonce);
+        self.check_nonce(u64::from(nonce));
 
         // do security
         let signer_account_id = env::signer_account_id();
         let security_response = self.is_secure("approve_request_debit".to_string(), "ALLOWED".to_string());
         self.require(security_response, format!("REQUEST DEBIT APPROVAL STOPPED. ACCOUNT {} NOT ALLOWED", signer_account_id));
 
-        self.check_is_valid_request_debit_reference( request_debit_ref);
+        self.check_is_valid_request_debit_reference(u64::from(request_debit_ref));
         
         let mut request_debit = self.find_request_debit(request_debit_ref);
         
@@ -395,21 +405,22 @@ impl OpenBank {
         // overwrite 
         self.request_debit_by_reference.insert(rd_reference.clone(), request_debit);
 
-        let rd = self.find_request_debit(rd_reference);
+        let rd = self.find_request_debit(U64(rd_reference.clone()));
 
         println!(" request debit status {} reference {} ", rd.status.clone(), rd.reference.clone() );
 
         self.move_request_debit_by_status(evacuating_status, rd.status.clone(), rd);
 
-        rd_reference
+        U64(rd_reference)
     }
     
     /// This operation will 'cancel' the 'RequestDebit' associated with the given 'request_debit_ref'. Cancellation can happen at any point in the 'RequestDebit' lifecycle 
     /// This operation is [**governed**], [**non-payable**]
     /// # Return Value
-    pub fn cancel_request_debit(&mut self, request_debit_ref : u64, nonce : u64) -> u64 {
+    /// Reference of the cancelled Request Debit
+    pub fn cancel_request_debit(&mut self, request_debit_ref : U64, nonce : U64) -> U64 {
         
-        self.check_nonce(nonce);
+        self.check_nonce(u64::from(nonce));
 
         let signer_account_id = env::signer_account_id();
 
@@ -417,7 +428,7 @@ impl OpenBank {
         let security_response = self.is_secure("request_debit".to_string(), "ALLOWED".to_string());
         self.require(security_response, format!("REQUEST DEBIT CANCELLATION STOPPED. ACCOUNT {} NOT ALLOWED", signer_account_id));
 
-        self.check_is_valid_request_debit_reference(request_debit_ref);
+        self.check_is_valid_request_debit_reference(u64::from(request_debit_ref));
         
         let mut request_debit = self.find_request_debit(request_debit_ref);
 
@@ -425,10 +436,10 @@ impl OpenBank {
         
         request_debit.status = "CANCELLED".to_string();
         
-        let rd_reference = request_debit.reference.clone();
+        let rd_reference = U64(request_debit.reference.clone());
         
         // overwrite 
-        self.request_debit_by_reference.insert(rd_reference.clone(), request_debit);
+        self.request_debit_by_reference.insert(u64::from(rd_reference.clone()), request_debit);
 
         let rd = self.find_request_debit(rd_reference);
 
@@ -443,10 +454,10 @@ impl OpenBank {
     /// [**governed**], [**payable**]
     /// # Return Value
     #[payable]
-    pub fn deposit(&mut self, description : String, amount : u128, nonce : u64) -> ob_io::Payment {
+    pub fn deposit(&mut self, description : String, amount : U128, nonce : U64) -> ob_io::Payment {
         
         // check nonce 
-        self.check_nonce(nonce);
+        self.check_nonce(u64::from(nonce));
 
         let signer_account_id = env::signer_account_id();
         
@@ -455,19 +466,21 @@ impl OpenBank {
         self.require(signer_account_id.as_bytes() == self.nominee_account_id.as_bytes() || security_response, format!("DEPOSIT CANCELLED. ACCOUNT {} NOT ALLOWED", signer_account_id));
 
         // check transfer amount
-        let deposit = near_sdk::env::attached_deposit();
+        let attached_deposit = near_sdk::env::attached_deposit();
 
-        self.check_attachment_vs_stated_amount(deposit, amount);
+        let stated_deposit = u128::from(amount);
+
+        self.check_attachment_vs_stated_amount(attached_deposit, stated_deposit);
 
         // increase the bank balance
-        self.increment_bank_balance(amount);
+        self.increment_bank_balance(stated_deposit);
 
         // log the payment
         let current_account_id = env::current_account_id();
         self.create_and_register_payment( self.bank_deployed_account_id.clone(), 
                                           current_account_id, 
                                                 signer_account_id, 
-                                                amount, 
+                                                stated_deposit, 
                                                 description, 
                                    "COMPLETED".to_string(),
                                      "DEPOSIT".to_string())
@@ -477,25 +490,27 @@ impl OpenBank {
     /// This operation can be called by the 'nominee_account_id' at any time 
     /// This operation is [**governed**], [**non-payable**] 
     /// # Return Value
-    pub fn withdraw(&mut self, description : String, amount : u128, nonce : u64) -> ob_io::Payment {
+    pub fn withdraw(&mut self, description : String, amount : U128, nonce : U64) -> ob_io::Payment {
+        // check nonce 
+        self.check_nonce(u64::from(nonce));
+
         let signer_account_id = env::signer_account_id();
 
         // do security
         let security_response = self.is_secure("withdraw".to_string(), "ALLOWED".to_string());
-        self.require(signer_account_id.as_bytes() == self.nominee_account_id.as_bytes() || security_response, format!("Account {} not allowed ", signer_account_id));       
-        
-        // check nonce 
-        self.check_nonce(nonce);
+        self.require(signer_account_id.as_bytes() == self.nominee_account_id.as_bytes() || security_response, format!("Account {} not allowed ", signer_account_id));               
+     
+        let withdrawal_amount = u128::from(amount) ;
         
         // check balance can afford it 
-        self.check_bank_balance(amount);
+        self.check_bank_balance(withdrawal_amount);
 
-        self.decrement_bank_balance(amount);
+        self.decrement_bank_balance(withdrawal_amount);
 
         // pay to the nominee account
         self.pay_to( self.nominee_account_id.clone(), 
                             signer_account_id, 
-                            amount, 
+                            withdrawal_amount, 
                             description, 
                             "WITHDRAWAL".to_string())
     }
@@ -549,6 +564,29 @@ impl OpenBank {
         true
     }
 
+    /// This operation will set the affirmative security code for role management 
+    /// # Return Value 
+    /// **Numeric** representing new security code
+    pub fn set_affirmative_secure_code(&mut self, affirmative_secure_code : i32) -> i32 {
+        let signer_account_id = env::signer_account_id();
+        let security_response = self.is_secure("set_affirmative_secure_code".to_string(), "ALLOWED".to_string());
+        self.require(security_response, format!("OPERATION CANCELLED. ACCOUNT {} NOT ALLOWED", signer_account_id));
+        self.affirmative_code = affirmative_secure_code; 
+        self.affirmative_code.clone()
+    }
+
+    /// This operation will set the negative security code for role management 
+    /// # Return value 
+    /// **Numeric** representing new security code
+    pub fn set_negative_secure_code(&mut self, negative_secure_code : i32) -> i32 {
+        let signer_account_id = env::signer_account_id();
+        let security_response = self.is_secure("set_negative_secure_code".to_string(), "ALLOWED".to_string());
+        self.require(security_response, format!("OPERATION CANCELLED. ACCOUNT {} NOT ALLOWED", signer_account_id));
+        self.negative_code = negative_secure_code; 
+        self.negative_code.clone()
+    }
+
+
     /// This operaion will deactivate test mode on this bank. Once deactivated this cannot be reactivated 
     /// # Return Value 
     /// **true** if and only if test mode has been deactivated
@@ -557,7 +595,6 @@ impl OpenBank {
         self.test_mode
     }
 
-    
     fn pay_to( &mut self, 
                 payee : String, 
                 signer : String, 
@@ -624,48 +661,49 @@ impl OpenBank {
            return self.test_mode;
         }
 
-        let signer_account_id = env::signer_account_id();
-        let mut security_response :bool; 
-        if mode.as_bytes() == "ALLOWED".to_string().as_bytes() {
-            security_response = false; // you are not allowed until you're allowed 
+        let security_response = false; 
+
+        let signer_account_id = env::signer_account_id(); 
+
+        if  mode.as_bytes() == "ALLOWED".to_string().as_bytes() {
+           
             ext_open_roles::is_allowed(self.access_security.clone(), 
                                         self.bank_deployed_account_id.clone(), 
                                         self.bank_name.clone(), 
-                                        operation, 
+                                        operation.clone(), 
                                         &signer_account_id, 
                                         NO_DEPOSIT, 
                                         BASE_GAS); 
-                                        format!("is_secure:01 ACCOUNT {} NOT ALLOWED ", signer_account_id);   
-                                        self.require(env::promise_results_count() == 1, "is_secure:03 PROMISE FAILURE ".to_string());
-                                        let res  = match env::promise_result(0) {
-                                                               PromiseResult::Successful(x) => x,
-                                                                _ => Vec::<u8>::new(),
-                                                            };
-            if res[0] != 0 {
-                security_response = true; 
-            };     
-            security_response    
-        }   
-        else { 
-            security_response = false; // the account is not secure 
-            ext_open_roles::is_barred(  self.access_security.clone(), 
+                                        let role_response : i32;
+                                        match env::promise_result(0) {
+                                           near_sdk::PromiseResult::Successful(x) => role_response = num::ToPrimitive::to_i32(x.get(0).unwrap()).unwrap(),
+                                            _ => panic!("is_secure::01 :- PROMISE FAILURE FOR SECURITY REQUEST :: OR LOCATION {} - CONTRACT ACCOUNT {} - CONTRACT {} - OPERATION {} - USER ACCOUNT {}",self.access_security.clone(),self.bank_deployed_account_id.clone(), self.bank_name.clone(), operation.clone(), &signer_account_id),
+                                        };
+                                        
+                                        if role_response == self.affirmative_code {
+                                            return true; 
+                                        }
+            return security_response; 
+        }
+        else {
+
+            ext_open_roles::is_barred(self.access_security.clone(), 
                                         self.bank_deployed_account_id.clone(), 
                                         self.bank_name.clone(), 
-                                        operation, 
+                                        operation.clone(), 
                                         &signer_account_id, 
                                         NO_DEPOSIT, 
                                         BASE_GAS); 
-            format!("is_secure:02 ACCOUNT {} NOT ALLOWED", signer_account_id);    
-            self.require(env::promise_results_count() == 1, "is_secure:04 PROMISE FAILURE ".to_string());
-            let res  = match env::promise_result(0) {
-                                    PromiseResult::Successful(x) => x,
-                                    _ => Vec::<u8>::new(),
-                                };
-            if res[0] == 0 { 
-              // the account is not on a barred list therefore "is secure"
-                security_response = true;             
-            }
-            security_response
+                                        let role_response : i32;
+                                        match env::promise_result(0) {
+                                           near_sdk::PromiseResult::Successful(x) => role_response = num::ToPrimitive::to_i32(x.get(0).unwrap()).unwrap(),
+                                            _ => panic!("is_secure::02 :- PROMISE FAILURE FOR SECURITY REQUEST :: OR LOCATION {} - CONTRACT ACCOUNT {} - CONTRACT {} - OPERATION {} - USER ACCOUNT {}",self.access_security.clone(),self.bank_deployed_account_id.clone(), self.bank_name.clone(), operation.clone(), &signer_account_id),
+                                        };
+                                        
+                                        if role_response == self.negative_code {
+                                            return true; 
+                                        }
+            return security_response; 
         }
     }
 
@@ -723,16 +761,24 @@ impl OpenBank {
     }
 
     fn check_request_debit_interval(&mut self, request_debit : ob_io::RequestDebit){
-        let time_now = Utc::now().timestamp_millis();
+        let time_now = env::block_timestamp() as i64;
         if request_debit.start_date > time_now {            
             panic!("REQUEST DEBIT CLAIM PERIOD NOT STARTED. TIME NOW {}, CLAIM PERIOD START DATE {}.",time_now, request_debit.start_date);
         }
 
         if request_debit.end_date < time_now {
-            panic!("Request Debit claim period expired. TIME NOW {}, CLAIM PERIOD END DATE {}.",time_now, request_debit.end_date);
+            panic!("REQUEST DEBIT CLAIM PERIOD EXPIRED. TIME NOW {}, CLAIM PERIOD END DATE {}.",time_now, request_debit.end_date);
         }
 
-        if time_now - request_debit.last_paid < request_debit.payout_interval{
+        let next_payment;
+        if request_debit.last_paid > 0 {
+            next_payment = request_debit.last_paid + request_debit.payout_interval;
+        }
+        else{
+            next_payment = request_debit.start_date + request_debit.payout_interval;
+        }
+    
+        if  next_payment > time_now {
             panic!("PAY OUT INTERVAL NOT REACHED. TIME NOW {}, LAST PAID {}, INTERVAL REQUIRED {}.",time_now, request_debit.last_paid, request_debit.payout_interval);
         }
     }
@@ -773,8 +819,8 @@ impl OpenBank {
                 owner : String, 
                 nominee_account_id : String, 
                 open_roles_account_id : String, 
-                secure_code : i32, 
-                in_secure_code : i32, 
+                affirmative_code : i32, 
+                negative_code : i32, 
                 test_mode : bool ) -> Self {
         Self {
             bank_name                   ,
@@ -790,13 +836,13 @@ impl OpenBank {
             access_security             : open_roles_account_id, 
             nonce_register              : HashMap::<String, HashSet<u64>>::new(),
             test_mode                   ,
-            secure_code                 ,
-            in_secure_code              ,
+            affirmative_code                 ,
+            negative_code              ,
         }
     }
 
     pub fn default() -> Self { 
-        panic!("Bank requires initialisation on deployment.")
+        panic!("OPEN BANK REQUIRES INITIALISATION ON DEPLOYMENT")
     }
 
 }
