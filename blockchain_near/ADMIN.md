@@ -31,7 +31,7 @@ NOTE:
 3. Log in to your NEAR account using:<br/>
 ``` > near login ```
 4. Deploy your selected release using the following command: <br/>
-```> near deploy openbank4.blockstarlogictest.testnet --wasmFile ${path to file}/open_block_ei_open_bank_near_core.wasm --initFunction new --initArgs {"bank_name":"${bank name}","bank_deployed_account_id":"${bank deployed account id}","denomination":"${bank currency denomination}","owner":"${owner account id}",												  "nominee_account_id":"${nominee account id}","open_roles_account_id":"${open roles account id}",																														  "secure_code":${secure code},"in_secure_code":${in secure code},"test_mode":${true/false} --initGas 5000000000000 --initDeposit 0 ```<br/>
+```> near deploy openbank4.blockstarlogictest.testnet --wasmFile ${path to file}/open_block_ei_open_bank_near_core.wasm --initFunction new --initArgs {"bank_name":"${bank name}","bank_deployed_account_id":"${bank deployed account id}","denomination":"${bank currency denomination}","owner":"${owner account id}",												  "nominee_account_id":"${nominee account id}","open_roles_account_id":"${open roles account id}","affirmative_code":${affirmative code},"negative_code":${in secure code},"test_mode":${true/false} --initGas 5000000000000 --initDeposit 0 ```<br/>
 The key parameters are as follows:<br/>
   **a.** ```${path to file}``` - replace with the path do your downloaded ```.wasm``` release<br/>
   **b.** ```${bank name}``` - replace with the name of the instance - necessary once you go over more than one instance in your organisation<br/>
@@ -40,8 +40,8 @@ The key parameters are as follows:<br/>
   **e.** ```${owner account id}``` - account of the owner of this OPEN BANK instance<br/>
   **f.** ```${nominee account id}``` - account of the nominee that will either conduct deposits into the bank or make withdrawals from the OPEN BANK<br/> 
   **g.** ```${open roles account id}``` - account of the OPEN ROLES instance that manages the Role Matrix associated with this OPEN BANK<br/>
-  **h.** ```${secure code}``` - code transmitted by OPEN ROLES to indicate ALLOWED/NOT BARRED provided by OPEN ROLES Admin<br/> 
-  **i.** ```${in secure code}``` - code transmitted by OPEN ROLES to indicate NOT ALLOWED/BARRED provided by OPEN ROLES Admin<br/>
+  **h.** ```${affirmative code}``` - code transmitted by OPEN ROLES to indicate ALLOWED/NOT BARRED provided by OPEN ROLES Admin<br/> 
+  **i.** ```${negative code}``` - code transmitted by OPEN ROLES to indicate NOT ALLOWED/BARRED provided by OPEN ROLES Admin<br/>
   **j.** ```${true/false}``` - whether test mode is active or inactive for this instance of Open Bank<br/>
 5.Test your release is deployed with the following command:<br/>
 ```> near call ${bank deployed account id} get_version --accountId ${any account id}```<br/>
@@ -52,7 +52,7 @@ This should return the version number of the release you have just deployed <br/
   This should return whether this instance is in test mode or not<br/>
   **b.** Check secure codes:<br/>
   ```> near call ${bank deployed account id} check_secure_codes --accountId ${authorised account id}```<br/>
-  This should return the configured secure codes ```[secure, in secure]```<br/>
+  This should return the configured secure codes ```[affirmative code, negative code]```<br/>
   **c.** Check nominee account<br/> 
   ```> near call ${bank deployed account id} view_nominee_account_id --accountId ${any account id}```<br/> 
   This should return the configured nominee account id<br/>
