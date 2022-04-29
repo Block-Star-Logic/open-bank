@@ -20,9 +20,10 @@ contract OpenBankPersonal is OpenBank, IOpenBankPersonal, IOpenVersion {
     address [] users; 
     address [] suspendedUsers; 
 
-    constructor(address _owner, address _safeHarbour) OpenBank(_safeHarbour) { 
+    constructor(address _owner, address _defaultAccountErc20, address _safeHarbour) OpenBank(_safeHarbour) { 
         owner = _owner; 
-        version = 1; // override parent version
+        version = 2; // override parent version
+        registerCurrencyAccountInternal(_defaultAccountErc20);	
     }
 
     function getName() view external returns (string memory _name) {
@@ -36,12 +37,7 @@ contract OpenBankPersonal is OpenBank, IOpenBankPersonal, IOpenVersion {
     function registerCurrencyAcccount(address _erc20) external returns (address _account){
         ownerOnly();
         require(!hasAccountByErc20[_erc20], "account already registered");           
-        OpenBankPersonalAccount account_ = new OpenBankPersonalAccount(self, _erc20);
-        address accountAddress_ = address(account_);
-        accountByErc20[_erc20] = accountAddress_;
-        hasAccountByErc20[_erc20] = true; 
-        knownAccountByAddress[accountAddress_] = true; 
-        return accountAddress_; 
+        return registerCurrencyAccountInternal(_erc20);
     }
 
     function isUser(address _user) view external returns (bool _isUser) {
@@ -151,6 +147,15 @@ contract OpenBankPersonal is OpenBank, IOpenBankPersonal, IOpenVersion {
 
     // ============================== INTERNAL =====================================
 
+
+    function registerCurrencyAccountInternal(address _erc20) internal returns (address _account){
+        OpenBankPersonalAccount account_ = new OpenBankPersonalAccount(self, _erc20);
+        address accountAddress_ = address(account_);
+        accountByErc20[_erc20] = accountAddress_;
+        hasAccountByErc20[_erc20] = true; 
+        knownAccountByAddress[accountAddress_] = true; 
+        return accountAddress_; 
+    }
 
     function safeHarbourTransfer(address _erc20, uint256 _amount) internal returns (uint256 _transferedBalance ) {
         IERC20 erc20_ = IERC20(_erc20);
