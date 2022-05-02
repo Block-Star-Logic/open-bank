@@ -1,18 +1,20 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: APACHE 2.0
 pragma solidity >=0.7.0 <0.9.0;
+
 
 import "https://github.com/Block-Star-Logic/open-libraries/blob/703b21257790c56a61cd0f3d9de3187a9012e2b3/blockchain_ethereum/solidity/V1/libraries/LOpenUtilities.sol";
 
-import "../interfaces/IOpenBank.sol";
-import "../interfaces/IOpenBankAccount.sol";
+import "./IOpenBank.sol";
+import "./IOpenBankAccount.sol";
 
 abstract contract OpenBank is IOpenBank { 
 
     using LOpenUtilities for address; 
     using LOpenUtilities for address[];
 
-    uint256 version             = 1; 
-    address NATIVE              = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;    
+    address constant NATIVE = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;    
+
+    uint256 version             = 1;     
     address SAFE_HARBOUR;     
     address self; 
 
@@ -94,6 +96,19 @@ abstract contract OpenBank is IOpenBank {
 
 
 // ========================================== INTERNAL =======================================================
+
+    function addAccountInternal(address _account, address _erc20) internal returns (bool) {
+        if(!knownAccountByAddress[_account]){
+            viewableAccounts.push(_account);
+            allAccounts.push(_account);
+            knownAccountByAddress[_account] = true; 
+             accountByErc20[_erc20] = _account;
+            hasAccountByErc20[_erc20] = true; 
+            knownAccountByAddress[_account] = true; 
+            return true; 
+        }        
+        return false; 
+    }
 
 
     function unhideInternal(address _account) internal returns (bool) { 

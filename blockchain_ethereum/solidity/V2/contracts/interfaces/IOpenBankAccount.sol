@@ -1,12 +1,10 @@
-// SPDX-License-Identifier: GPL-3.0
-
+// SPDX-License-Identifier: APACHE 2.0
 pragma solidity >=0.7.0 <0.9.0;
+
 
 import {Txn} from "./IOpenBank.sol";
 
 interface IOpenBankAccount {
-
-    enum Operation{PAY_IN, PAY_OUT, REQUEST_DEBIT_APPROvE, REQUEST_DEBIT_DECLINE, ALL}
 
     function getDenomination() view external returns (address _erc20, string memory _symbol);
 
@@ -30,7 +28,7 @@ interface IOpenBankAccount {
 
     function withdraw(uint256 _amount, string memory _reference) external returns (uint256 _txRef);
 
-    function setLimit(address _user, uint256 _amount, Operation _operation) external returns (bool _set);
+    function setLimit(address _user, uint256 _amount, string memory _function) external returns (bool _set);
 
     function exitDiscrepancy() external returns (bool _exited);
 
