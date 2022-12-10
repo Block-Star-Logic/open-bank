@@ -3,16 +3,21 @@ pragma solidity >=0.7.0 <0.9.0;
 
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/fcf35e5722847f5eadaaee052968a8a54d03622a/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
-import "./IOpenBankAccount.sol";
+import "https://github.com/Block-Star-Logic/open-version/blob/e161e8a2133fbeae14c45f1c3985c0a60f9a0e54/blockchain_ethereum/solidity/V1/interfaces/IOpenVersion.sol";
 
-abstract contract OpenBankAccount is IOpenBankAccount { 
+import "https://github.com/Block-Star-Logic/open-bank/blob/main/blockchain_ethereum/solidity/V2/contracts/interfaces/IOpenBankAccount.sol";
 
+abstract contract OpenBankAccount is IOpenBankAccount, IOpenVersion { 
+    
+    uint256 version = 2; 
+    string name = "OPEN_BANK_ACCOUNT";
     address constant NATIVE = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;    
     address denomination; 
     IERC20Metadata erc20; 
     string symbol; 
     uint256 registeredBalance; 
     address self; 
+    
 
     bool isNative; 
     
@@ -29,6 +34,14 @@ abstract contract OpenBankAccount is IOpenBankAccount {
         }
         denomination = _erc20; 
         self = address(this);        
+    }
+
+    function getName() virtual view external returns (string memory _name) {
+        return name; 
+    }
+
+    function getVersion() virtual view external returns (uint256 _version) {
+        return version; 
     }
 
     function getDenomination() view external returns (address _erc20, string memory _sybmol){    
@@ -93,7 +106,7 @@ abstract contract OpenBankAccount is IOpenBankAccount {
             uint256 balance_ = erc20.balanceOf(_from);
             require(balance_ >= _amount, " insufficient balance ");
             uint256 allowance_ = erc20.allowance(_from, _to);
-            require(allowance_ > _amount, " insufficient approval provided ");
+            require(allowance_ >= _amount, " insufficient approval provided ");
             erc20.transferFrom(_from, _to, _amount);
         }
         _txnRef = incrementRegisteredBalance(_amount);
@@ -103,7 +116,7 @@ abstract contract OpenBankAccount is IOpenBankAccount {
     function debit(uint256 _amount, address payable _to) internal returns (uint256 _txnRef) {
         _txnRef = decrementRegisteredBalance(_amount);
         if(isNative) {
-            require(self.balance > _amount);
+            require(self.balance >= _amount);
             _to.transfer(_amount);
         }
         else { 

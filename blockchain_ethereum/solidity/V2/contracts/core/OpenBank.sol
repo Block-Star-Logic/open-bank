@@ -1,20 +1,21 @@
 // SPDX-License-Identifier: APACHE 2.0
 pragma solidity >=0.7.0 <0.9.0;
 
-
+import "https://github.com/Block-Star-Logic/open-version/blob/e161e8a2133fbeae14c45f1c3985c0a60f9a0e54/blockchain_ethereum/solidity/V1/interfaces/IOpenVersion.sol";
 import "https://github.com/Block-Star-Logic/open-libraries/blob/703b21257790c56a61cd0f3d9de3187a9012e2b3/blockchain_ethereum/solidity/V1/libraries/LOpenUtilities.sol";
 
-import "./IOpenBank.sol";
-import "./IOpenBankAccount.sol";
+import "https://github.com/Block-Star-Logic/open-bank/blob/417a0f1c00df8139190f4ee535c30eb737e24dc7/blockchain_ethereum/solidity/V2/contracts/interfaces/IOpenBank.sol";
+import "https://github.com/Block-Star-Logic/open-bank/blob/417a0f1c00df8139190f4ee535c30eb737e24dc7/blockchain_ethereum/solidity/V2/contracts/interfaces/IOpenBankAccount.sol";
 
-abstract contract OpenBank is IOpenBank { 
+abstract contract OpenBank is IOpenBank, IOpenVersion { 
 
     using LOpenUtilities for address; 
     using LOpenUtilities for address[];
 
     address constant NATIVE = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;    
 
-    uint256 version             = 1;     
+    string name = "OPEN_BANK";
+    uint256 version             = 2;     
     address SAFE_HARBOUR;     
     address self; 
 
@@ -33,6 +34,14 @@ abstract contract OpenBank is IOpenBank {
     constructor(address _safeHarbour) {
         SAFE_HARBOUR = _safeHarbour; 
         self = address(this);
+    }
+
+    function getName() view external returns (string memory _name) {
+        return name; 
+    }
+
+    function getVersion() view external returns (uint256 _version) {
+        return version; 
     }
 
     function getTxnRefs() view external returns (uint256 [] memory _txnRefs){
