@@ -5,7 +5,7 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/fcf35e572284
 
 import "https://github.com/Block-Star-Logic/open-version/blob/e161e8a2133fbeae14c45f1c3985c0a60f9a0e54/blockchain_ethereum/solidity/V1/interfaces/IOpenVersion.sol";
 
-import "https://github.com/Block-Star-Logic/open-bank/blob/main/blockchain_ethereum/solidity/V2/contracts/interfaces/IOpenBankAccount.sol";
+import "../interfaces/IOpenBankAccount.sol";
 
 abstract contract OpenBankAccount is IOpenBankAccount, IOpenVersion { 
     
